@@ -208,133 +208,183 @@ Designed by UEC ICT Department<br>
 </footer>
 
 <script>
-let driverName="";
-let busNumber="";
-let studentCount=0;
-let qr;
-let isProcessing=false;
-let lastScannedId="";
+let driverName = "";
+let busNumber = "";
+let studentCount = 0;
+let qr = null;
+let isProcessing = false;
+let lastScannedId = "";
 
-function startRoute(){
-driverName=document.getElementById("driver").value.trim();
-busNumber=document.getElementById("bus").value.trim();
+/* =========================
+   START ROUTE
+========================= */
+function startRoute() {
 
-if(!driverName||!busNumber){
+driverName = document.getElementById("driver").value.trim();
+busNumber = document.getElementById("bus").value.trim();
+
+if (!driverName || !busNumber) {
 alert("Enter Driver & Bus Number");
 return;
 }
 
-let startTime=new Date().toLocaleTimeString();
+let startTime = new Date().toLocaleTimeString();
 
-document.getElementById("loginCard").style.display="none";
-document.getElementById("scannerCard").style.display="block";
+document.getElementById("loginCard").style.display = "none";
+document.getElementById("scannerCard").style.display = "block";
 
-document.getElementById("summary").innerHTML=
-"Driver: "+driverName+
-"<br>Bus: "+busNumber+
-"<br>Start Time: "+startTime;
+document.getElementById("summary").innerHTML =
+"Driver: " + driverName +
+"<br>Bus: " + busNumber +
+"<br>Start Time: " + startTime;
 
 startScanner();
 }
 
-function startScanner(){
+/* =========================
+   START SCANNER
+========================= */
+function startScanner() {
 
-qr=new Html5Qrcode("reader");
-isProcessing=false;
+if (!qr) {
+qr = new Html5Qrcode("reader");
+}
+
+isProcessing = false;
 
 qr.start(
-{facingMode:"environment"},
-{fps:10,qrbox:250},
+{ facingMode: "environment" },
+{ fps: 10, qrbox: 250 },
 onScanSuccess
 );
 }
 
-async function onScanSuccess(decodedText){
+/* =========================
+   QR SUCCESS
+========================= */
+async function onScanSuccess(decodedText) {
 
-if(isProcessing) return;
+if (isProcessing) return;
+if (decodedText === lastScannedId) return;
 
-// Prevent same QR spam
-if(decodedText === lastScannedId) return;
+isProcessing = true;
+lastScannedId = decodedText;
 
-isProcessing=true;
-lastScannedId=decodedText;
-
-try{
+try {
 await qr.stop();
-}catch(e){}
+} catch (e) {}
 
 sendData(decodedText);
 }
 
-function sendData(id){
+/* =========================
+   SEND DATA TO GOOGLE SCRIPT
+========================= */
+function sendData(id) {
 
-fetch("https://script.google.com/macros/s/AKfycbzlT8RGcQtHVOWjshn1H5BZyi78B0DgUhtL4ahpS9JXlgTuKMjzSWcQVYm05AaIxx0KcQ/exec",{
-method:"POST",
-body:JSON.stringify({
-id:id,
-driver:driverName,
-bus:busNumber
+fetch("https://script.google.com/macros/s/AKfycbzlT8RGcQtHVOWjshn1H5BZyi78B0DgUhtL4ahpS9JXlgTuKMjzSWcQVYm05AaIxx0KcQ/exec", {
+method: "POST",
+body: JSON.stringify({
+id: id,
+driver: driverName,
+bus: busNumber
 })
 })
-.then(res=>res.json())
-.then(data=>{
+.then(res => res.json())
+.then(data => {
 
-let msg="";
+let msg = "";
 
-if(data.status==="approved"){
+if (data.status === "approved") {
+
 studentCount++;
-document.getElementById("counter").innerText=
-"Passengers: "+studentCount;
+document.getElementById("counter").innerText =
+"Passengers: " + studentCount;
 
-playVoice(data.name);
-msg="✅ "+data.name+" Approved";
-}
-else if(data.status==="out_of_time"){
-msg="⏰ Outside Allowed Time";
-}
-else{
-msg="🚫 Not Registered";
-}
+msg = "✅ " + data.name + " Approved";
+document.getElementById("status").innerText = msg;
 
-document.getElementById("status").innerText=msg;
-
-setTimeout(()=>{
+/* Restart AFTER voice ends */
+playVoice(data.name, function () {
 restartScanner();
-},1500);
+});
+
+return;
+}
+
+else if (data.status === "out_of_time") {
+msg = "⏰ Outside Allowed Time";
+}
+else if (data.status === "already_used") {
+msg = "⚠ Already Used";
+}
+else {
+msg = "🚫 Not Registered";
+}
+
+document.getElementById("status").innerText = msg;
+
+/* Restart after short delay for non-approved cases */
+setTimeout(() => {
+restartScanner();
+}, 1500);
 
 })
-.catch((err)=>{
-console.log("REAL ERROR:",err);
-document.getElementById("status").innerText="⚠ Network Error";
-setTimeout(()=>{
+.catch((err) => {
+console.log("REAL ERROR:", err);
+document.getElementById("status").innerText = "⚠ Network Error";
+
+setTimeout(() => {
 restartScanner();
-},1500);
+}, 1500);
 });
 }
 
-function restartScanner(){
+/* =========================
+   RESTART SCANNER
+========================= */
+function restartScanner() {
 
-lastScannedId="";
-isProcessing=false;
+lastScannedId = "";
+isProcessing = false;
 
-qr.clear().then(()=>{
-startScanner();
-});
-}
-
-function closeRoute(){
-if(qr){qr.stop();}
-document.getElementById("scannerCard").innerHTML=
-"<h2 style='color:#d4af37'>Route Closed Successfully</h2>"+
-"<p>Total Passengers: "+studentCount+"</p>";
-}
-
-function playVoice(name){
-const msg=new SpeechSynthesisUtterance(
-"Welcome "+name+". You are approved for boarding."
+qr.start(
+{ facingMode: "environment" },
+{ fps: 10, qrbox: 250 },
+onScanSuccess
 );
-msg.lang="en-US";
-msg.rate=0.9;
+}
+
+/* =========================
+   CLOSE ROUTE
+========================= */
+function closeRoute() {
+
+if (qr) {
+qr.stop();
+}
+
+document.getElementById("scannerCard").innerHTML =
+"<h2 style='color:#d4af37'>Route Closed Successfully</h2>" +
+"<p>Total Passengers: " + studentCount + "</p>";
+}
+
+/* =========================
+   VOICE FUNCTION
+========================= */
+function playVoice(name, callback) {
+
+const msg = new SpeechSynthesisUtterance(
+"Welcome " + name + ". You are approved for boarding."
+);
+
+msg.lang = "en-US";
+msg.rate = 0.9;
+
+msg.onend = function () {
+if (callback) callback();
+};
+
 speechSynthesis.speak(msg);
 }
 </script>
