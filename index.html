@@ -270,7 +270,6 @@ function sendData(id){
 
 fetch("https://script.google.com/macros/s/AKfycbzlT8RGcQtHVOWjshn1H5BZyi78B0DgUhtL4ahpS9JXlgTuKMjzSWcQVYm05AaIxx0KcQ/exec",{
 method:"POST",
-headers:{"Content-Type":"application/json"},
 body:JSON.stringify({
 id:id,
 driver:driverName,
@@ -304,7 +303,8 @@ restartScanner();
 },1500);
 
 })
-.catch(()=>{
+.catch((err)=>{
+console.log("REAL ERROR:",err);
 document.getElementById("status").innerText="⚠ Network Error";
 setTimeout(()=>{
 restartScanner();
