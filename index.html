@@ -7,8 +7,8 @@
 
 <style>
 body{
-font-family:Arial, sans-serif;
-background:#0f172a;
+font-family:Arial;
+background:linear-gradient(135deg,#0f172a,#1e293b);
 color:white;
 text-align:center;
 margin:0;
@@ -16,50 +16,68 @@ padding:0;
 }
 
 .card{
-background:#1e293b;
-padding:20px;
-margin:20px auto;
+background:#111827;
+padding:25px;
+margin:25px auto;
 width:90%;
-max-width:450px;
-border-radius:15px;
-box-shadow:0 0 20px rgba(0,0,0,0.4);
+max-width:420px;
+border-radius:18px;
+box-shadow:0 0 25px rgba(212,175,55,0.3);
+border:1px solid #d4af37;
+}
+
+h2{
+color:#d4af37;
+margin-bottom:15px;
 }
 
 input{
 width:90%;
-padding:10px;
+padding:12px;
 margin:10px 0;
-border-radius:8px;
+border-radius:10px;
 border:none;
 font-size:16px;
+background:#1e293b;
+color:white;
 }
 
 button{
-padding:10px 20px;
+padding:12px 20px;
 border:none;
-border-radius:8px;
-background:#22c55e;
-color:white;
+border-radius:10px;
+background:#d4af37;
+color:black;
 font-size:16px;
 cursor:pointer;
+font-weight:bold;
+}
+
+button:hover{
+background:#facc15;
 }
 
 #reader{
-width:100%;
 margin-top:15px;
 }
 
-.success{color:#22c55e;font-weight:bold;}
-.error{color:#ef4444;font-weight:bold;}
-.processing{color:#facc15;font-weight:bold;}
+#counter{
+margin-top:10px;
+font-size:18px;
+color:#facc15;
+}
+
+.success{color:#22c55e;font-weight:bold;font-size:18px;}
+.error{color:#ef4444;font-weight:bold;font-size:18px;}
+.processing{color:#facc15;font-weight:bold;font-size:18px;}
 
 .spinner{
 border:4px solid rgba(255,255,255,0.2);
-border-top:4px solid #facc15;
+border-top:4px solid #d4af37;
 border-radius:50%;
-width:40px;
-height:40px;
-margin:10px auto;
+width:45px;
+height:45px;
+margin:15px auto;
 animation:spin 1s linear infinite;
 }
 
@@ -89,6 +107,7 @@ animation:spin 1s linear infinite;
 </div>
 
 <script>
+
 let driverName="";
 let busNumber="";
 let studentCount=0;
@@ -97,11 +116,10 @@ let processingLock=false;
 
 const beep=new Audio("https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg");
 
-/* ========================= */
 /* START ROUTE */
-/* ========================= */
 
 function startRoute(){
+
 driverName=document.getElementById("driver").value.trim();
 busNumber=document.getElementById("bus").value.trim();
 
@@ -110,33 +128,26 @@ alert("Enter Driver & Bus Number");
 return;
 }
 
-let startTime=new Date().toLocaleTimeString();
-
 document.getElementById("loginCard").style.display="none";
 document.getElementById("scannerCard").style.display="block";
 
 document.getElementById("summary").innerHTML=
 "Driver: "+driverName+
 "<br>Bus: "+busNumber+
-"<br>Start Time: "+startTime;
+"<br>Start Time: "+new Date().toLocaleTimeString();
 
 initializeScanner();
 }
 
-/* ========================= */
 /* INITIALIZE SCANNER */
-/* ========================= */
 
 async function initializeScanner(){
 
 if(qr){
-try{
-await qr.clear();
-}catch(e){}
+try{await qr.clear();}catch(e){}
 }
 
 qr=new Html5Qrcode("reader");
-
 processingLock=false;
 
 qr.start(
@@ -148,14 +159,11 @@ onScanSuccess
 document.getElementById("statusBox").innerHTML="Ready to scan...";
 }
 
-/* ========================= */
-/* ON QR SCAN */
-/* ========================= */
+/* ON SCAN */
 
 async function onScanSuccess(decodedText){
 
 if(processingLock) return;
-
 processingLock=true;
 
 try{
@@ -163,33 +171,23 @@ await qr.stop();
 await qr.clear();
 }catch(e){}
 
-showProcessingScreen();
-
+showProcessing();
 await sendData(decodedText);
 }
 
-/* ========================= */
-/* PROCESSING SCREEN */
-/* ========================= */
+/* PROCESSING */
 
-function showProcessingScreen(){
+function showProcessing(){
 
 document.getElementById("reader").style.display="none";
 
-let box=document.getElementById("statusBox");
-box.className="processing";
-box.innerHTML=`
-<div class='spinner'></div>
-<div>Processing on server...</div>
-<div style="direction:rtl;margin-top:5px;">
-جاري معالجة البيانات على الخادم...
-</div>
-`;
+document.getElementById("statusBox").className="processing";
+document.getElementById("statusBox").innerHTML=
+"<div class='spinner'></div>"+
+"Processing...<br><div style='direction:rtl'>جاري المعالجة</div>";
 }
 
-/* ========================= */
-/* SEND DATA TO SERVER */
-/* ========================= */
+/* SEND DATA */
 
 async function sendData(id){
 
@@ -201,115 +199,78 @@ headers:{"Content-Type":"application/json"},
 body:JSON.stringify({
 id:id,
 driver:driverName,
-bus:busNumber,
-timestamp:Date.now()
+bus:busNumber
 })
 });
+
+/* IMPORTANT CHECK */
+if(!response.ok){
+throw new Error("Server error");
+}
 
 const data=await response.json();
 
 handleResponse(data);
 
 }catch(error){
+console.error("Fetch error:",error);
 handleNetworkError();
 }
 
 }
 
-/* ========================= */
 /* HANDLE RESPONSE */
-/* ========================= */
 
 function handleResponse(data){
 
 let box=document.getElementById("statusBox");
-let message="";
 
 if(data.status==="approved"){
 
 studentCount++;
 document.getElementById("counter").innerText="Passengers: "+studentCount;
 
-message=`
-<div>✅ ${data.name||"Student"} Approved</div>
-<div style="direction:rtl;margin-top:5px;">
-تم قبول الطالب بنجاح
-</div>
-`;
-
 box.className="success";
+box.innerHTML="✅ "+(data.name||"Student")+" Approved";
 
 beep.play();
-if(navigator.vibrate) navigator.vibrate(150);
-playVoice(data.name||"Student");
 
 }
 else if(data.status==="already_used"){
 
-message=`
-<div>❌ Already Used</div>
-<div style="direction:rtl;margin-top:5px;">
-تم استخدام هذا الرمز من قبل
-</div>
-`;
-
 box.className="error";
+box.innerHTML="❌ Already Used";
 
 }
 else{
 
-message=`
-<div>🚫 Not Registered</div>
-<div style="direction:rtl;margin-top:5px;">
-غير مسجل في النظام
-</div>
-`;
-
 box.className="error";
-}
-
-box.innerHTML=message;
-
-setTimeout(()=>{
-restartScanner();
-},2000);
+box.innerHTML="🚫 Not Registered";
 
 }
 
-/* ========================= */
+setTimeout(restartScanner,2000);
+}
+
 /* NETWORK ERROR */
-/* ========================= */
 
 function handleNetworkError(){
 
 let box=document.getElementById("statusBox");
-
 box.className="error";
-box.innerHTML=`
-<div>⚠ Network Error</div>
-<div style="direction:rtl;margin-top:5px;">
-خطأ في الاتصال بالشبكة
-</div>
-`;
+box.innerHTML="⚠ Server Connection Failed";
 
-setTimeout(()=>{
-restartScanner();
-},2000);
+setTimeout(restartScanner,2000);
 }
 
-/* ========================= */
-/* RESTART SCANNER */
-/* ========================= */
+/* RESTART */
 
 function restartScanner(){
-
 document.getElementById("reader").style.display="block";
 initializeScanner();
 }
 
-/* ========================= */
 /* CLOSE ROUTE */
-/* ========================= */
 
 async function closeRoute(){
 
@@ -321,25 +282,10 @@ await qr.clear();
 }
 
 document.getElementById("scannerCard").innerHTML=
-"<h2 style='color:#22c55e'>Route Closed Successfully</h2>"+
+"<h2 style='color:#d4af37'>Route Closed</h2>"+
 "<p>Total Passengers: "+studentCount+"</p>";
 }
 
-/* ========================= */
-/* VOICE */
-/* ========================= */
-
-function playVoice(name){
-
-const msg=new SpeechSynthesisUtterance(
-"Welcome "+name+". You are approved for boarding."
-);
-
-msg.lang="en-US";
-msg.rate=0.9;
-
-speechSynthesis.speak(msg);
-}
 </script>
 
 </body>
