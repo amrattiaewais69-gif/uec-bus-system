@@ -9,8 +9,8 @@
 <style>
 body{
   margin:0;
-  font-family: 'Segoe UI', sans-serif;
-  background: linear-gradient(135deg,#0b1e3d,#091428);
+  font-family:'Segoe UI',sans-serif;
+  background:linear-gradient(135deg,#0b1e3d,#091428);
   color:white;
   display:flex;
   justify-content:center;
@@ -19,18 +19,20 @@ body{
 }
 
 .card{
-  background: rgba(255,255,255,0.05);
-  padding:30px;
+  background:rgba(255,255,255,0.05);
+  padding:25px;
   border-radius:20px;
-  backdrop-filter: blur(15px);
+  backdrop-filter:blur(15px);
   border:1px solid rgba(212,175,55,0.4);
   width:95%;
   max-width:500px;
   text-align:center;
+  animation:fadeIn 0.6s ease;
 }
 
 h1{
   color:#d4af37;
+  margin-bottom:10px;
 }
 
 input{
@@ -48,10 +50,38 @@ button{
   border-radius:10px;
   cursor:pointer;
   font-weight:bold;
+  margin-top:10px;
+}
+
+.topbar{
+  position:absolute;
+  top:10px;
+  width:95%;
+  max-width:500px;
+  display:flex;
+  justify-content:space-between;
+  font-size:13px;
+  color:#d4af37;
+}
+
+.bus-logo{
+  font-size:40px;
+  animation:floatBus 2s infinite ease-in-out;
+}
+
+@keyframes floatBus{
+  0%{transform:translateX(0)}
+  50%{transform:translateX(8px)}
+  100%{transform:translateX(0)}
+}
+
+@keyframes fadeIn{
+  from{opacity:0;transform:scale(0.95)}
+  to{opacity:1;transform:scale(1)}
 }
 
 #status{
-  margin-top:20px;
+  margin-top:15px;
   font-size:18px;
 }
 </style>
@@ -60,18 +90,27 @@ button{
 <body>
 
 <div class="card" id="login">
+<div class="bus-logo">🚌</div>
 <h1>University of East Capital</h1>
 <h3>Driver Identification</h3>
 
-<input type="text" id="driver" placeholder="Driver Full Name" required>
+<input type="text" id="driver" placeholder="Driver Full Name">
 <input type="text" id="bus" placeholder="Bus Number">
 
-<button onclick="startSystem()">Activate Route</button>
+<button onclick="showSummary()">Activate Route</button>
+</div>
+
+<div class="card" id="summary" style="display:none;"></div>
+
+<div class="topbar" id="topbar" style="display:none;">
+<div id="driverInfo"></div>
+<div id="liveTime"></div>
 </div>
 
 <div class="card" id="scanner" style="display:none;">
 <h1>Smart Bus Gate</h1>
-<div id="reader"></div>
+<button onclick="endRoute()">End Route</button>
+<div id="reader" style="margin-top:15px;"></div>
 <div id="status"></div>
 </div>
 
@@ -79,30 +118,58 @@ button{
 
 let driverName="";
 let busNumber="";
+let qr;
+let clockInterval;
 
-function startSystem(){
+function showSummary(){
   driverName=document.getElementById("driver").value;
   busNumber=document.getElementById("bus").value;
-  
-  if(!driverName){
-    alert("Enter Driver Name");
-    return;
-  }
-  
+  if(!driverName){ alert("Enter Driver Name"); return; }
+
+  const now=new Date();
   document.getElementById("login").style.display="none";
+  document.getElementById("summary").style.display="block";
+  document.getElementById("summary").innerHTML=`
+  <h1>Confirm Route</h1>
+  <p>Driver: ${driverName}</p>
+  <p>Bus No: ${busNumber || "-"}</p>
+  <p>Date: ${now.toLocaleDateString()}</p>
+  <p>Time: ${now.toLocaleTimeString()}</p>
+  <button onclick="startSystem()">Confirm & Start Scanning</button>
+  `;
+}
+
+function startSystem(){
+  document.getElementById("summary").style.display="none";
   document.getElementById("scanner").style.display="block";
-  
-  const html5QrCode = new Html5Qrcode("reader");
-  
+  document.getElementById("topbar").style.display="flex";
+  document.getElementById("driverInfo").innerText="👤 "+driverName;
+
+  startClock();
+
+  qr=new Html5Qrcode("reader");
   Html5Qrcode.getCameras().then(devices=>{
-    html5QrCode.start(
+    qr.start(
       devices[0].id,
-      { fps: 10, qrbox: 250 },
-      qrCodeMessage => {
-        sendData(qrCodeMessage);
-      }
+      {fps:10,qrbox:250},
+      qrCodeMessage=>{ sendData(qrCodeMessage); }
     );
   });
+}
+
+function startClock(){
+  clockInterval=setInterval(()=>{
+    const now=new Date();
+    document.getElementById("liveTime").innerText=
+    now.toLocaleTimeString()+" | "+now.toLocaleDateString();
+  },1000);
+}
+
+function endRoute(){
+  if(qr){ qr.stop(); }
+  clearInterval(clockInterval);
+  document.getElementById("scanner").innerHTML=
+  "<h1>Route Closed</h1><p>Bus Departed Successfully</p>";
 }
 
 function sendData(id){
@@ -118,7 +185,7 @@ bus:busNumber
 .then(data=>{
 let msg="";
 if(data.status==="approved"){
-msg="✅ Approved - "+data.name+" ("+data.period+")";
+msg="✅ "+data.name+" ("+data.period+")";
 }
 else if(data.status==="already_used"){
 msg="❌ Already Used";
