@@ -2,82 +2,240 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>University Bus System</title>
+<title>UEC University Bus System</title>
 <script src="https://unpkg.com/html5-qrcode"></script>
+
 <style>
 body{
 margin:0;
-font-family:Arial;
-background:linear-gradient(135deg,#0a1931,#1f4068);
-color:white;
+font-family:'Segoe UI',sans-serif;
+background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+color:#fff;
 text-align:center;
+overflow-x:hidden;
 }
-.card{
-background:#162447;
-margin:20px;
+
+/* Splash */
+#splash{
+position:fixed;
+width:100%;
+height:100%;
+background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+display:flex;
+justify-content:center;
+align-items:center;
+z-index:9999;
+animation:fadeOut 1.5s ease forwards;
+animation-delay:2.5s;
+}
+.splash-content{
+color:#d4af37;
+animation:zoomIn 1.5s ease;
+}
+@keyframes zoomIn{
+0%{transform:scale(0.7);opacity:0;}
+100%{transform:scale(1);opacity:1;}
+}
+@keyframes fadeOut{
+to{opacity:0;visibility:hidden;}
+}
+
+/* Header */
+.header{
 padding:20px;
-border-radius:15px;
-box-shadow:0 0 20px rgba(212,175,55,0.4);
+font-size:28px;
+font-weight:bold;
+color:#d4af37;
 }
+
+/* Road */
+.bus-container{
+position:relative;
+height:160px;
+overflow:hidden;
+}
+.road{
+position:absolute;
+bottom:40px;
+width:100%;
+height:6px;
+background:linear-gradient(to right,#d4af37 50%,transparent 50%);
+background-size:30px 6px;
+animation:roadMove 1s linear infinite;
+}
+@keyframes roadMove{
+0%{background-position:0 0;}
+100%{background-position:30px 0;}
+}
+
+/* Bus */
+.bus{
+position:absolute;
+bottom:50px;
+animation:busMove 8s linear infinite;
+filter:drop-shadow(0 0 20px #d4af37);
+}
+@keyframes busMove{
+0%{left:-250px;}
+100%{left:110%;}
+}
+
+.wheel{
+animation:wheelSpin 0.8s linear infinite;
+transform-origin:center;
+}
+@keyframes wheelSpin{
+from{transform:rotate(0deg);}
+to{transform:rotate(360deg);}
+}
+
+/* Card */
+.card{
+width:90%;
+max-width:420px;
+margin:20px auto;
+background:rgba(0,0,0,0.6);
+border-radius:20px;
+padding:25px;
+box-shadow:0 0 25px rgba(212,175,55,0.4);
+backdrop-filter:blur(10px);
+}
+
+input{
+width:90%;
+padding:12px;
+margin:10px 0;
+border-radius:8px;
+border:none;
+}
+
 button{
 background:#d4af37;
 border:none;
-padding:12px 20px;
-border-radius:8px;
+padding:12px 25px;
+border-radius:10px;
+font-weight:bold;
 cursor:pointer;
-font-weight:bold;
+transition:0.3s;
 }
-input{
-padding:10px;
-margin:5px;
-border-radius:6px;
-border:none;
-}
+button:hover{transform:scale(1.05);}
+
 #counter{
-color:#d4af37;
+margin-top:15px;
 font-weight:bold;
-margin-top:10px;
+color:#d4af37;
+}
+
+footer{
+margin-top:40px;
+padding:20px;
+font-size:13px;
+color:#ccc;
+border-top:1px solid rgba(212,175,55,0.3);
 }
 </style>
 </head>
+
 <body>
 
-<h1>🚌 University Bus System</h1>
+<div id="splash">
+<div class="splash-content">
+<h1>UEC UNIVERSITY BUS SYSTEM</h1>
+<p>Transportation Management Platform</p>
+</div>
+</div>
+
+<div class="header">UNIVERSITY of East Capital</div>
+<p>Transportation Management Platform</p>
+
+<div class="bus-container">
+<div class="road"></div>
+
+<div class="bus">
+<svg viewBox="0 0 500 200" width="220">
+
+<rect x="50" y="60" width="380" height="80" rx="20" fill="#111"/>
+<rect x="50" y="60" width="380" height="80" rx="20" fill="url(#goldGradient)" opacity="0.3"/>
+
+<rect x="80" y="75" width="60" height="40" rx="5" fill="#0f2027"/>
+<rect x="150" y="75" width="60" height="40" rx="5" fill="#0f2027"/>
+<rect x="220" y="75" width="60" height="40" rx="5" fill="#0f2027"/>
+<rect x="290" y="75" width="60" height="40" rx="5" fill="#0f2027"/>
+
+<rect x="360" y="75" width="50" height="55" rx="5" fill="#1c1c1c"/>
+
+<circle cx="150" cy="150" r="25" fill="#000"/>
+<circle cx="150" cy="150" r="15" fill="#d4af37" class="wheel"/>
+
+<circle cx="350" cy="150" r="25" fill="#000"/>
+<circle cx="350" cy="150" r="15" fill="#d4af37" class="wheel"/>
+
+<circle cx="430" cy="110" r="8" fill="#d4af37">
+<animate attributeName="opacity" values="1;0.4;1" dur="1s" repeatCount="indefinite"/>
+</circle>
+
+<defs>
+<linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+<stop offset="0%" style="stop-color:#d4af37;stop-opacity:1"/>
+<stop offset="100%" style="stop-color:#f5e6a3;stop-opacity:1"/>
+</linearGradient>
+</defs>
+
+</svg>
+</div>
+</div>
 
 <div class="card" id="loginCard">
-<h2>Driver Login</h2>
-<input type="text" id="driver" placeholder="Driver Name"><br>
-<input type="text" id="bus" placeholder="Bus Number"><br>
-<button onclick="startSystem()">Start Route</button>
+<h3>Driver Login</h3>
+<input type="text" id="driver" placeholder="Driver Name">
+<input type="text" id="bus" placeholder="Bus Number">
+<button onclick="startRoute()">Start Route</button>
 </div>
 
 <div class="card" id="scannerCard" style="display:none;">
+<div id="summary"></div>
 <div id="reader"></div>
 <div id="counter">Passengers: 0</div>
-<p id="status"></p>
-<button onclick="endRoute()">Close Route</button>
+<div id="status"></div>
+<br>
+<button onclick="closeRoute()">Close Route</button>
 </div>
+
+<footer>
+Designed by UEC ICT Department<br>
+© 2026 University of East Capital. All Rights Reserved.
+</footer>
 
 <script>
 let driverName="";
 let busNumber="";
 let studentCount=0;
 let qr;
-let routeType="";
 
-function startSystem(){
+function startRoute(){
 driverName=document.getElementById("driver").value;
 busNumber=document.getElementById("bus").value;
+
 if(!driverName||!busNumber){
-alert("Enter Driver & Bus");
+alert("Enter Driver & Bus Number");
 return;
 }
+
+let startTime=new Date().toLocaleTimeString();
+
 document.getElementById("loginCard").style.display="none";
 document.getElementById("scannerCard").style.display="block";
 
+document.getElementById("summary").innerHTML=
+"Driver: "+driverName+
+"<br>Bus: "+busNumber+
+"<br>Start Time: "+startTime;
+
 qr=new Html5Qrcode("reader");
-qr.start({ facingMode:"environment" },
-{ fps:10, qrbox:250 },
+
+qr.start(
+{facingMode:"environment"},
+{fps:10,qrbox:250},
 qrCodeMessage=>{
 sendData(qrCodeMessage);
 });
@@ -95,38 +253,42 @@ bus:busNumber
 .then(res=>res.json())
 .then(data=>{
 let msg="";
+
 if(data.status==="approved"){
 studentCount++;
-routeType=data.routeType;
-document.getElementById("counter").innerText="Passengers: "+studentCount;
-playSound();
-msg="✅ "+data.name+" - "+routeType;
+document.getElementById("counter").innerText=
+"Passengers: "+studentCount;
+playVoice(data.name);
+msg="✅ "+data.name+" Approved";
 }
 else if(data.status==="already_used"){
 msg="❌ Already Used";
 }
 else if(data.status==="out_of_time"){
-msg="⏰ Out of Time";
+msg="⏰ Outside Allowed Time";
 }
 else{
 msg="🚫 Not Registered";
 }
+
 document.getElementById("status").innerText=msg;
 });
 }
 
-function endRoute(){
+function closeRoute(){
 if(qr){qr.stop();}
-fetch("YOUR_WEB_APP_URL",{
-method:"POST",
-body:JSON.stringify({action:"close_route"})
-});
-document.getElementById("scannerCard").innerHTML="<h2>Route Closed Successfully</h2>";
+document.getElementById("scannerCard").innerHTML=
+"<h2 style='color:#d4af37'>Route Closed Successfully</h2>"+
+"<p>Total Passengers: "+studentCount+"</p>";
 }
 
-function playSound(){
-const audio=new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
-audio.play();
+function playVoice(name){
+const msg=new SpeechSynthesisUtterance(
+"Welcome "+name+". You are approved for boarding."
+);
+msg.lang="en-US";
+msg.rate=0.9;
+speechSynthesis.speak(msg);
 }
 </script>
 
