@@ -213,9 +213,8 @@ Designed by UEC ICT Department<br>
 let driverName="";
 let busNumber="";
 let studentCount=0;
-let qr;
-let isProcessing=false;
-let lastScanned="";
+let qr=null;
+let isScanning=false;
 
 const beep = new Audio("https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg");
 
@@ -238,31 +237,71 @@ document.getElementById("summary").innerHTML=
 "<br>Bus: "+busNumber+
 "<br>Start Time: "+startTime;
 
-qr=new Html5Qrcode("reader");
+initializeScanner();
+}
+
+/* ============================= */
+/* SCANNER INITIALIZATION */
+/* ============================= */
+
+function initializeScanner(){
+
+if(qr){
+qr.clear().catch(()=>{});
+}
+
+qr = new Html5Qrcode("reader");
+
+isScanning=true;
 
 qr.start(
 {facingMode:"environment"},
 {fps:10,qrbox:250},
-qrCodeMessage=>{
+onScanSuccess
+);
 
-if(isProcessing) return;
-if(qrCodeMessage===lastScanned) return;
+document.getElementById("statusBox").innerHTML="Ready to scan...";
+}
 
-lastScanned=qrCodeMessage;
-isProcessing=true;
+/* ============================= */
+/* ON QR SUCCESS */
+/* ============================= */
 
-qr.pause();
-showProcessing();
-sendData(qrCodeMessage);
+function onScanSuccess(decodedText){
 
+if(!isScanning) return;
+
+isScanning=false;
+
+/* FULL STOP CAMERA */
+qr.stop().then(()=>{
+showProcessingScreen();
+sendData(decodedText);
 });
 }
 
-function showProcessing(){
+/* ============================= */
+/* PROCESSING SCREEN */
+/* ============================= */
+
+function showProcessingScreen(){
+
+document.getElementById("reader").style.display="none";
+
 let box=document.getElementById("statusBox");
 box.className="processing";
-box.innerHTML="<div class='spinner'></div>Checking student...";
+box.innerHTML=`
+<div class='spinner'></div>
+<div>Processing on server...</div>
+<div style="direction:rtl;margin-top:5px;">
+جاري معالجة البيانات على الخادم...
+</div>
+`;
 }
+
+/* ============================= */
+/* SEND DATA */
+/* ============================= */
 
 function sendData(id){
 
@@ -285,55 +324,94 @@ studentCount++;
 document.getElementById("counter").innerText=
 "Passengers: "+studentCount;
 
-message="✅ "+data.name+" Approved";
+message=`
+<div>✅ ${data.name} Approved</div>
+<div style="direction:rtl;margin-top:5px;">
+تم قبول الطالب بنجاح
+</div>
+`;
+
 box.className="success";
-playVoice(data.name);
+
 beep.play();
 if(navigator.vibrate) navigator.vibrate(150);
+playVoice(data.name);
 }
 else if(data.status==="already_used"){
-message="❌ Already Used";
+message=`
+<div>❌ Already Used</div>
+<div style="direction:rtl;margin-top:5px;">
+تم استخدام هذا الرمز من قبل
+</div>
+`;
 box.className="error";
 }
 else if(data.status==="out_of_time"){
-message="⏰ Outside Allowed Time";
+message=`
+<div>⏰ Outside Allowed Time</div>
+<div style="direction:rtl;margin-top:5px;">
+خارج الوقت المسموح
+</div>
+`;
 box.className="error";
 }
 else{
-message="🚫 Not Registered";
+message=`
+<div>🚫 Not Registered</div>
+<div style="direction:rtl;margin-top:5px;">
+غير مسجل في النظام
+</div>
+`;
 box.className="error";
 }
 
 box.innerHTML=message;
 
+/* AFTER 2 SECONDS RESTART CAMERA CLEANLY */
 setTimeout(()=>{
-isProcessing=false;
-qr.resume();
-box.className="";
-box.innerHTML="Ready for next scan...";
+document.getElementById("reader").style.display="block";
+initializeScanner();
 },2000);
 
 })
 .catch(()=>{
+
 let box=document.getElementById("statusBox");
 box.className="error";
-box.innerHTML="⚠ Network Error";
+box.innerHTML=`
+<div>⚠ Network Error</div>
+<div style="direction:rtl;margin-top:5px;">
+خطأ في الاتصال بالشبكة
+</div>
+`;
 
 setTimeout(()=>{
-isProcessing=false;
-qr.resume();
-box.innerHTML="Ready for next scan...";
-box.className="";
+document.getElementById("reader").style.display="block";
+initializeScanner();
 },2000);
+
 });
 }
 
+/* ============================= */
+/* CLOSE ROUTE */
+/* ============================= */
+
 function closeRoute(){
-if(qr){qr.stop();}
+if(qr){
+qr.stop().then(()=>{
+qr.clear();
+});
+}
+
 document.getElementById("scannerCard").innerHTML=
 "<h2 style='color:#d4af37'>Route Closed Successfully</h2>"+
 "<p>Total Passengers: "+studentCount+"</p>";
 }
+
+/* ============================= */
+/* VOICE */
+/* ============================= */
 
 function playVoice(name){
 const msg=new SpeechSynthesisUtterance(
