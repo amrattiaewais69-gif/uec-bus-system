@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UEC Smart Bus</title>
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<style>
+body{
+  margin:0;
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg,#0b1e3d,#091428);
+  color:white;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+
+.card{
+  background: rgba(255,255,255,0.05);
+  padding:30px;
+  border-radius:20px;
+  backdrop-filter: blur(15px);
+  border:1px solid rgba(212,175,55,0.4);
+  width:95%;
+  max-width:500px;
+  text-align:center;
+}
+
+h1{
+  color:#d4af37;
+}
+
+input{
+  width:100%;
+  padding:12px;
+  margin:10px 0;
+  border:none;
+  border-radius:10px;
+}
+
+button{
+  background:#d4af37;
+  border:none;
+  padding:12px 20px;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+#status{
+  margin-top:20px;
+  font-size:18px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card" id="login">
+<h1>University of East Capital</h1>
+<h3>Driver Identification</h3>
+
+<input type="text" id="driver" placeholder="Driver Full Name" required>
+<input type="text" id="bus" placeholder="Bus Number">
+
+<button onclick="startSystem()">Activate Route</button>
+</div>
+
+<div class="card" id="scanner" style="display:none;">
+<h1>Smart Bus Gate</h1>
+<div id="reader"></div>
+<div id="status"></div>
+</div>
+
+<script>
+
+let driverName="";
+let busNumber="";
+
+function startSystem(){
+  driverName=document.getElementById("driver").value;
+  busNumber=document.getElementById("bus").value;
+  
+  if(!driverName){
+    alert("Enter Driver Name");
+    return;
+  }
+  
+  document.getElementById("login").style.display="none";
+  document.getElementById("scanner").style.display="block";
+  
+  const html5QrCode = new Html5Qrcode("reader");
+  
+  Html5Qrcode.getCameras().then(devices=>{
+    html5QrCode.start(
+      devices[0].id,
+      { fps: 10, qrbox: 250 },
+      qrCodeMessage => {
+        sendData(qrCodeMessage);
+      }
+    );
+  });
+}
+
+function sendData(id){
+fetch("YOUR_WEB_APP_URL",{
+method:"POST",
+body:JSON.stringify({
+id:id,
+driver:driverName,
+bus:busNumber
+})
+})
+.then(res=>res.json())
+.then(data=>{
+let msg="";
+if(data.status==="approved"){
+msg="✅ Approved - "+data.name+" ("+data.period+")";
+}
+else if(data.status==="already_used"){
+msg="❌ Already Used";
+}
+else if(data.status==="out_of_time"){
+msg="⏰ Out of Time";
+}
+else{
+msg="🚫 Not Registered";
+}
+document.getElementById("status").innerText=msg;
+});
+}
+
+</script>
+
+</body>
+</html>
