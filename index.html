@@ -134,7 +134,6 @@ color:#ccc;
 border-top:1px solid rgba(212,175,55,0.3);
 }
 </style>
-
 </head>
 
 <body>
@@ -151,23 +150,18 @@ border-top:1px solid rgba(212,175,55,0.3);
 
 <div class="bus-container">
 <div class="road"></div>
-
 <div class="bus">
 <svg viewBox="0 0 500 200" width="220">
-
 <rect x="50" y="60" width="380" height="80" rx="20" fill="#111"/>
 <rect x="50" y="60" width="380" height="80" rx="20" fill="url(#goldGradient)" opacity="0.3"/>
-
 <rect x="80" y="75" width="60" height="40" rx="5" fill="#0f2027"/>
 <rect x="150" y="75" width="60" height="40" rx="5" fill="#0f2027"/>
 <rect x="220" y="75" width="60" height="40" rx="5" fill="#0f2027"/>
 <rect x="290" y="75" width="60" height="40" rx="5" fill="#0f2027"/>
-
 <rect x="360" y="75" width="50" height="55" rx="5" fill="#1c1c1c"/>
 
 <circle cx="150" cy="150" r="25" fill="#000"/>
 <circle cx="150" cy="150" r="15" fill="#d4af37" class="wheel"/>
-
 <circle cx="350" cy="150" r="25" fill="#000"/>
 <circle cx="350" cy="150" r="15" fill="#d4af37" class="wheel"/>
 
@@ -181,7 +175,6 @@ border-top:1px solid rgba(212,175,55,0.3);
 <stop offset="100%" style="stop-color:#f5e6a3;stop-opacity:1"/>
 </linearGradient>
 </defs>
-
 </svg>
 </div>
 </div>
@@ -215,9 +208,6 @@ let qr = null;
 let isProcessing = false;
 let lastScannedId = "";
 
-/* =========================
-   START ROUTE
-========================= */
 function startRoute() {
 
 driverName = document.getElementById("driver").value.trim();
@@ -241,28 +231,19 @@ document.getElementById("summary").innerHTML =
 startScanner();
 }
 
-/* =========================
-   START SCANNER
-========================= */
 function startScanner() {
-
 if (!qr) {
 qr = new Html5Qrcode("reader");
 }
 
-isProcessing = false;
-
 qr.start(
 { facingMode: "environment" },
-{ fps: 10, qrbox: 250 },
+{ fps: 15, qrbox: 250 },
 onScanSuccess
 );
 }
 
-/* =========================
-   QR SUCCESS
-========================= */
-async function onScanSuccess(decodedText) {
+function onScanSuccess(decodedText) {
 
 if (isProcessing) return;
 if (decodedText === lastScannedId) return;
@@ -270,19 +251,18 @@ if (decodedText === lastScannedId) return;
 isProcessing = true;
 lastScannedId = decodedText;
 
-try {
-await qr.stop();
-} catch (e) {}
-
 sendData(decodedText);
+
+/* Cooldown (NO camera restart) */
+setTimeout(() => {
+isProcessing = false;
+lastScannedId = "";
+}, 1200);
 }
 
-/* =========================
-   SEND DATA TO GOOGLE SCRIPT
-========================= */
 function sendData(id) {
 
-fetch("https://script.google.com/macros/s/AKfycbwjZX8QfbIU2qhxfIoTLAwbtyPXlVC-HV1QbMA6JNg8vCF9ZbJ6UBUslKY7Iyg6J4dXzw/exec", {
+fetch("YOUR_GOOGLE_SCRIPT_URL", {
 method: "POST",
 body: JSON.stringify({
 id: id,
@@ -302,16 +282,9 @@ document.getElementById("counter").innerText =
 "Passengers: " + studentCount;
 
 msg = "✅ " + data.name + " Approved";
-document.getElementById("status").innerText = msg;
 
-/* Restart AFTER voice ends */
-playVoice(data.name, function () {
-restartScanner();
-});
-
-return;
+playVoice(data.name);
 }
-
 else if (data.status === "out_of_time") {
 msg = "⏰ Outside Allowed Time";
 }
@@ -324,40 +297,12 @@ msg = "🚫 Not Registered";
 
 document.getElementById("status").innerText = msg;
 
-/* Restart after short delay for non-approved cases */
-setTimeout(() => {
-restartScanner();
-}, 500);
-
 })
 .catch((err) => {
-console.log("REAL ERROR:", err);
 document.getElementById("status").innerText = "⚠ Network Error";
-
-setTimeout(() => {
-restartScanner();
-}, 500);
 });
 }
 
-/* =========================
-   RESTART SCANNER
-========================= */
-function restartScanner() {
-
-lastScannedId = "";
-isProcessing = false;
-
-qr.start(
-{ facingMode: "environment" },
-{ fps: 10, qrbox: 250 },
-onScanSuccess
-);
-}
-
-/* =========================
-   CLOSE ROUTE
-========================= */
 function closeRoute() {
 
 if (qr) {
@@ -369,10 +314,9 @@ document.getElementById("scannerCard").innerHTML =
 "<p>Total Passengers: " + studentCount + "</p>";
 }
 
-/* =========================
-   VOICE FUNCTION
-========================= */
-function playVoice(name, callback) {
+function playVoice(name) {
+
+speechSynthesis.cancel();
 
 const msg = new SpeechSynthesisUtterance(
 "Welcome " + name + ". You are approved for boarding."
@@ -381,12 +325,9 @@ const msg = new SpeechSynthesisUtterance(
 msg.lang = "en-US";
 msg.rate = 0.9;
 
-msg.onend = function () {
-if (callback) callback();
-};
-
 speechSynthesis.speak(msg);
 }
 </script>
+
 </body>
 </html>
