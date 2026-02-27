@@ -140,7 +140,7 @@ border-top:1px solid rgba(212,175,55,0.3);
 </div>
 </div>
 
-<div class="header">🎓UNIVERSITY of East Capital🎓</div>
+<div class="header">🎓 UNIVERSITY of East Capital</div>
 <p>Transportation Management Platform</p>
 
 <div class="bus-container">
@@ -191,7 +191,7 @@ Designed by UEC ICT Department<br>
 
 <script>
 
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzRlC-kZnX_0sp_DZmvGVG5YxdiNoulRH7428us8-KN1PfWOKtN3SkUqLQLZuwKtQv2PQ/exec";
+const WEB_APP_URL="https://script.google.com/macros/s/AKfycbwViUXqeBsDW8GiG_YcloEdIqp0JS1PnoznCbsQTc_oCMuCHAZGucQcvQHJu4ImY8meEw/exec";
 
 let driverName="";
 let busNumber="";
@@ -200,7 +200,6 @@ let qr=null;
 let isProcessing=false;
 let lastScannedId="";
 
-/* START ROUTE */
 function startRoute(){
 driverName=document.getElementById("driver").value.trim();
 busNumber=document.getElementById("bus").value.trim();
@@ -212,13 +211,11 @@ document.getElementById("summary").innerHTML=
 startScanner();
 }
 
-/* START SCANNER */
 function startScanner(){
 if(!qr){qr=new Html5Qrcode("reader");}
 qr.start({facingMode:"environment"},{fps:10,qrbox:250},onScanSuccess);
 }
 
-/* QR SUCCESS */
 async function onScanSuccess(decodedText){
 if(isProcessing||decodedText===lastScannedId)return;
 isProcessing=true;
@@ -227,13 +224,13 @@ await qr.stop();
 sendData(decodedText);
 }
 
-/* SEND DATA */
 async function sendData(id){
 try{
-const response=await fetch(WEB_APP_URL,{
+
+await fetch(WEB_APP_URL,{
 method:"POST",
-mode:"cors",
-headers:{"Content-Type":"application/json"},
+mode:"no-cors",
+headers:{"Content-Type":"text/plain;charset=utf-8"},
 body:JSON.stringify({
 id:id,
 driver:driverName,
@@ -242,21 +239,10 @@ routeType:"Main Route"
 })
 });
 
-const data=await response.json();
-
-let msg="";
-
-if(data.status==="approved"){
 studentCount++;
 document.getElementById("counter").innerText="Passengers: "+studentCount;
-msg="✅ "+data.name+" Approved";
-playVoice(data.name,()=>restartScanner());
-}
-else if(data.status==="already_used"){msg="⚠ Already Used";restartScanner();}
-else if(data.status==="out_of_time"){msg="⏰ Outside Allowed Time";restartScanner();}
-else{msg="🚫 Not Registered";restartScanner();}
-
-document.getElementById("status").innerText=msg;
+document.getElementById("status").innerText="✅ Scanned Successfully";
+playVoice("Welcome",()=>restartScanner());
 
 }catch(error){
 document.getElementById("status").innerText="⚠ Network Error";
@@ -277,8 +263,8 @@ document.getElementById("scannerCard").innerHTML=
 "<p>Total Passengers: "+studentCount+"</p>";
 }
 
-function playVoice(name,callback){
-const msg=new SpeechSynthesisUtterance("Welcome "+name);
+function playVoice(text,callback){
+const msg=new SpeechSynthesisUtterance(text);
 msg.lang="en-US";
 msg.onend=function(){if(callback)callback();};
 speechSynthesis.speak(msg);
