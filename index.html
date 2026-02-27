@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>UEC University Bus System</title>
+<title>🚍UEC University Bus System</title>
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
@@ -79,7 +79,6 @@ filter:drop-shadow(0 0 20px #d4af37);
 0%{left:-250px;}
 100%{left:110%;}
 }
-
 .wheel{
 animation:wheelSpin 0.8s linear infinite;
 transform-origin:center;
@@ -100,7 +99,6 @@ padding:25px;
 box-shadow:0 0 25px rgba(212,175,55,0.4);
 backdrop-filter:blur(10px);
 }
-
 input{
 width:90%;
 padding:12px;
@@ -108,7 +106,6 @@ margin:10px 0;
 border-radius:8px;
 border:none;
 }
-
 button{
 background:#d4af37;
 border:none;
@@ -119,13 +116,11 @@ cursor:pointer;
 transition:0.3s;
 }
 button:hover{transform:scale(1.05);}
-
 #counter{
 margin-top:15px;
 font-weight:bold;
 color:#d4af37;
 }
-
 footer{
 margin-top:40px;
 padding:20px;
@@ -134,54 +129,41 @@ color:#ccc;
 border-top:1px solid rgba(212,175,55,0.3);
 }
 </style>
-
 </head>
 
 <body>
 
 <div id="splash">
 <div class="splash-content">
-<h1>UEC UNIVERSITY BUS SYSTEM</h1>
+<h1>🚍UEC UNIVERSITY BUS SYSTEM 🚍</h1>
 <p>Transportation Management Platform</p>
 </div>
 </div>
 
-<div class="header">UNIVERSITY of East Capital</div>
+<div class="header">🎓UNIVERSITY of East Capital🎓</div>
 <p>Transportation Management Platform</p>
 
 <div class="bus-container">
 <div class="road"></div>
-
 <div class="bus">
 <svg viewBox="0 0 500 200" width="220">
-
 <rect x="50" y="60" width="380" height="80" rx="20" fill="#111"/>
 <rect x="50" y="60" width="380" height="80" rx="20" fill="url(#goldGradient)" opacity="0.3"/>
-
 <rect x="80" y="75" width="60" height="40" rx="5" fill="#0f2027"/>
 <rect x="150" y="75" width="60" height="40" rx="5" fill="#0f2027"/>
 <rect x="220" y="75" width="60" height="40" rx="5" fill="#0f2027"/>
 <rect x="290" y="75" width="60" height="40" rx="5" fill="#0f2027"/>
-
 <rect x="360" y="75" width="50" height="55" rx="5" fill="#1c1c1c"/>
-
 <circle cx="150" cy="150" r="25" fill="#000"/>
 <circle cx="150" cy="150" r="15" fill="#d4af37" class="wheel"/>
-
 <circle cx="350" cy="150" r="25" fill="#000"/>
 <circle cx="350" cy="150" r="15" fill="#d4af37" class="wheel"/>
-
-<circle cx="430" cy="110" r="8" fill="#d4af37">
-<animate attributeName="opacity" values="1;0.4;1" dur="1s" repeatCount="indefinite"/>
-</circle>
-
 <defs>
-<linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-<stop offset="0%" style="stop-color:#d4af37;stop-opacity:1"/>
-<stop offset="100%" style="stop-color:#f5e6a3;stop-opacity:1"/>
+<linearGradient id="goldGradient">
+<stop offset="0%" stop-color="#d4af37"/>
+<stop offset="100%" stop-color="#f5e6a3"/>
 </linearGradient>
 </defs>
-
 </svg>
 </div>
 </div>
@@ -204,189 +186,104 @@ border-top:1px solid rgba(212,175,55,0.3);
 
 <footer>
 Designed by UEC ICT Department<br>
-© 2026 University of East Capital. All Rights Reserved.
+© 2026 University of East Capital
 </footer>
 
 <script>
-let driverName = "";
-let busNumber = "";
-let studentCount = 0;
-let qr = null;
-let isProcessing = false;
-let lastScannedId = "";
 
-/* =========================
-   START ROUTE
-========================= */
-function startRoute() {
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzRlC-kZnX_0sp_DZmvGVG5YxdiNoulRH7428us8-KN1PfWOKtN3SkUqLQLZuwKtQv2PQ/exec";
 
-driverName = document.getElementById("driver").value.trim();
-busNumber = document.getElementById("bus").value.trim();
+let driverName="";
+let busNumber="";
+let studentCount=0;
+let qr=null;
+let isProcessing=false;
+let lastScannedId="";
 
-if (!driverName || !busNumber) {
-alert("Enter Driver & Bus Number");
-return;
-}
-
-let startTime = new Date().toLocaleTimeString();
-
-document.getElementById("loginCard").style.display = "none";
-document.getElementById("scannerCard").style.display = "block";
-
-document.getElementById("summary").innerHTML =
-"Driver: " + driverName +
-"<br>Bus: " + busNumber +
-"<br>Start Time: " + startTime;
-
+/* START ROUTE */
+function startRoute(){
+driverName=document.getElementById("driver").value.trim();
+busNumber=document.getElementById("bus").value.trim();
+if(!driverName||!busNumber){alert("Enter Driver & Bus Number");return;}
+document.getElementById("loginCard").style.display="none";
+document.getElementById("scannerCard").style.display="block";
+document.getElementById("summary").innerHTML=
+"Driver: "+driverName+"<br>Bus: "+busNumber+"<br>Start Time: "+new Date().toLocaleTimeString();
 startScanner();
 }
 
-/* =========================
-   START SCANNER
-========================= */
-function startScanner() {
-
-if (!qr) {
-qr = new Html5Qrcode("reader");
+/* START SCANNER */
+function startScanner(){
+if(!qr){qr=new Html5Qrcode("reader");}
+qr.start({facingMode:"environment"},{fps:10,qrbox:250},onScanSuccess);
 }
 
-isProcessing = false;
-
-qr.start(
-{ facingMode: "environment" },
-{ fps: 10, qrbox: 250 },
-onScanSuccess
-);
-}
-
-/* =========================
-   QR SUCCESS
-========================= */
-async function onScanSuccess(decodedText) {
-
-if (isProcessing) return;
-if (decodedText === lastScannedId) return;
-
-isProcessing = true;
-lastScannedId = decodedText;
-
-try {
+/* QR SUCCESS */
+async function onScanSuccess(decodedText){
+if(isProcessing||decodedText===lastScannedId)return;
+isProcessing=true;
+lastScannedId=decodedText;
 await qr.stop();
-} catch (e) {}
-
 sendData(decodedText);
 }
 
-/* =========================
-   SEND DATA TO GOOGLE SCRIPT
-========================= */
-function sendData(id) {
-
-fetch("https://script.google.com/macros/s/AKfycbzRlC-kZnX_0sp_DZmvGVG5YxdiNoulRH7428us8-KN1PfWOKtN3SkUqLQLZuwKtQv2PQ/exec", {
-method: "POST",
-body: JSON.stringify({
-id: id,
-driver: driverName,
-bus: busNumber
+/* SEND DATA */
+async function sendData(id){
+try{
+const response=await fetch(WEB_APP_URL,{
+method:"POST",
+mode:"cors",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+id:id,
+driver:driverName,
+bus:busNumber,
+routeType:"Main Route"
 })
-})
-.then(res => res.json())
-.then(data => {
+});
 
-let msg = "";
+const data=await response.json();
 
-if (data.status === "approved") {
+let msg="";
 
+if(data.status==="approved"){
 studentCount++;
-document.getElementById("counter").innerText =
-"Passengers: " + studentCount;
+document.getElementById("counter").innerText="Passengers: "+studentCount;
+msg="✅ "+data.name+" Approved";
+playVoice(data.name,()=>restartScanner());
+}
+else if(data.status==="already_used"){msg="⚠ Already Used";restartScanner();}
+else if(data.status==="out_of_time"){msg="⏰ Outside Allowed Time";restartScanner();}
+else{msg="🚫 Not Registered";restartScanner();}
 
-msg = "✅ " + data.name + " Approved";
-document.getElementById("status").innerText = msg;
+document.getElementById("status").innerText=msg;
 
-/* Restart AFTER voice ends */
-playVoice(data.name, function () {
-restartScanner();
-});
-
-return;
+}catch(error){
+document.getElementById("status").innerText="⚠ Network Error";
+setTimeout(()=>restartScanner(),1500);
+}
 }
 
-else if (data.status === "out_of_time") {
-msg = "⏰ Outside Allowed Time";
-}
-else if (data.status === "already_used") {
-msg = "⚠ Already Used";
-}
-else {
-msg = "🚫 Not Registered";
+function restartScanner(){
+lastScannedId="";
+isProcessing=false;
+qr.start({facingMode:"environment"},{fps:10,qrbox:250},onScanSuccess);
 }
 
-document.getElementById("status").innerText = msg;
-
-/* Restart after short delay for non-approved cases */
-setTimeout(() => {
-restartScanner();
-}, 1500);
-
-})
-.catch((err) => {
-console.log("REAL ERROR:", err);
-document.getElementById("status").innerText = "⚠ Network Error";
-
-setTimeout(() => {
-restartScanner();
-}, 1500);
-});
+function closeRoute(){
+if(qr){qr.stop();}
+document.getElementById("scannerCard").innerHTML=
+"<h2 style='color:#d4af37'>Route Closed Successfully</h2>"+
+"<p>Total Passengers: "+studentCount+"</p>";
 }
 
-/* =========================
-   RESTART SCANNER
-========================= */
-function restartScanner() {
-
-lastScannedId = "";
-isProcessing = false;
-
-qr.start(
-{ facingMode: "environment" },
-{ fps: 10, qrbox: 250 },
-onScanSuccess
-);
-}
-
-/* =========================
-   CLOSE ROUTE
-========================= */
-function closeRoute() {
-
-if (qr) {
-qr.stop();
-}
-
-document.getElementById("scannerCard").innerHTML =
-"<h2 style='color:#d4af37'>Route Closed Successfully</h2>" +
-"<p>Total Passengers: " + studentCount + "</p>";
-}
-
-/* =========================
-   VOICE FUNCTION
-========================= */
-function playVoice(name, callback) {
-
-const msg = new SpeechSynthesisUtterance(
-"Welcome " + name + ". You are approved for boarding."
-);
-
-msg.lang = "en-US";
-msg.rate = 0.9;
-
-msg.onend = function () {
-if (callback) callback();
-};
-
+function playVoice(name,callback){
+const msg=new SpeechSynthesisUtterance("Welcome "+name);
+msg.lang="en-US";
+msg.onend=function(){if(callback)callback();};
 speechSynthesis.speak(msg);
 }
+
 </script>
 </body>
 </html>
