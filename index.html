@@ -198,7 +198,6 @@ let busNumber="";
 let studentCount=0;
 let qr=null;
 let isProcessing=false;
-let lastScannedId="";
 
 function startRoute(){
 driverName=document.getElementById("driver").value.trim();
@@ -217,20 +216,25 @@ qr.start({facingMode:"environment"},{fps:10,qrbox:250},onScanSuccess);
 }
 
 async function onScanSuccess(decodedText){
-if(isProcessing||decodedText===lastScannedId)return;
-isProcessing=true;
-lastScannedId=decodedText;
-await qr.stop();
-sendData(decodedText);
+
+    if(isProcessing) return;
+
+    isProcessing = true;
+
+    // Stop scanner immediately
+    try{
+        await qr.stop();
+    }catch(e){}
+
+    sendData(decodedText);
 }
 
 async function sendData(id){
 try{
 
-await fetch(WEB_APP_URL,{
+const response = await fetch(WEB_APP_URL,{
 method:"POST",
-mode:"no-cors",
-headers:{"Content-Type":"text/plain;charset=utf-8"},
+headers:{"Content-Type":"application/json"},
 body:JSON.stringify({
 id:id,
 driver:driverName,
@@ -239,10 +243,30 @@ routeType:"Main Route"
 })
 });
 
-studentCount++;
-document.getElementById("counter").innerText="Passengers: "+studentCount;
-document.getElementById("status").innerText="✅ Scanned Successfully";
-playVoice("Welcome",()=>restartScanner());
+const result = await response.json();
+
+if(result.status === "approved"){
+    studentCount++;
+    document.getElementById("counter").innerText="Passengers: "+studentCount;
+    document.getElementById("status").innerText="✅ Approved: " + result.name;
+    playVoice("Welcome",()=>restartScanner());
+}
+else if(result.status === "already_used"){
+    document.getElementById("status").innerText="⚠ Already Scanned Today";
+    playVoice("Already scanned",()=>restartScanner());
+}
+else if(result.status === "out_of_time"){
+    document.getElementById("status").innerText="⛔ Outside Allowed Time";
+    playVoice("Outside allowed time",()=>restartScanner());
+}
+else if(result.status === "not_registered"){
+    document.getElementById("status").innerText="❌ Not Registered";
+    playVoice("Not registered",()=>restartScanner());
+}
+else{
+    document.getElementById("status").innerText="⚠ Server Error";
+    setTimeout(()=>restartScanner(),1500);
+}
 
 }catch(error){
 document.getElementById("status").innerText="⚠ Network Error";
@@ -251,9 +275,12 @@ setTimeout(()=>restartScanner(),1500);
 }
 
 function restartScanner(){
-lastScannedId="";
-isProcessing=false;
-qr.start({facingMode:"environment"},{fps:10,qrbox:250},onScanSuccess);
+    isProcessing=false;
+    qr.start(
+        {facingMode:"environment"},
+        {fps:10, qrbox:250},
+        onScanSuccess
+    );
 }
 
 function closeRoute(){
